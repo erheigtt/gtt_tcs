@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>贪吃蛇</title>
+
+
+    <style>
+    *{
+        margin: 0;
+        padding:0;
+    }
+    .tcs_container{
+        background-image: url("img/floor_tile.png");
+        width: 800px;
+        height: 600px;
+        background-color: #b3acf9;
+        position: absolute;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        margin: auto;
+        border: 4px dashed #151414;
+        /* border-top: none; */
+    }
+    .scoreboard-wrap{
+        width: 100%;
+        height: 40px;
+        background-color: #fcfcfc;
+        position: absolute;
+        top: -46px;
+        border: 4px dashed #151313;
+        border-bottom: 2px solid #060505;
+        left: -4px;
+        overflow: hidden;
+    }
+    .s-icon,.t-icon{
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        margin-top: 5px;
+        margin-left: 5px;
+        background-size: cover;
+    }
+    .s-icon{
+        background-image: url(img/蛇.png);
+    }
+    .t-icon{
+        background-image: url(img/时间.png);
+        top: 3px;
+        position: relative;
+    }
+    .score-text{
+        display: inline-block;
+        color: #0c0b0b;
+        font-size: 30px;
+        position:absolute;
+        font-family: fantasy;
+        top: 3px;
+    }
+    .duration{
+        position: absolute;
+        right: 20px;
+        top: 0;
+        font-family: fantasy;
+        color: #0a0909;
+        font-size: 30px;
+    }
+    .tcs-wrap{
+        width: 800px;
+        height: 600px;
+        overflow: hidden;
+        position: relative;
+    }
+    .tcs-head{
+        width: 20px;
+        height: 20px;
+        background-color:crimson;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 999;
+        /* background-image: url(img/snake_head.png); */
+        /* background-size: 100% 100%; */
+    }
+    .tcs-head.right{
+        border-radius: 0 10px 10px 0;
+    }
+    .tcs-head.bottom{
+        border-radius: 0 0 10px 10px;
+    }
+    .tcs-head.top{
+        border-radius:  10px 10px 0  0;
+    }
+    .tcs-head.left{
+        border-radius:  10px 0  0 10px ;
+    }
+    .tcs-body{
+        width: 20px;
+        height: 20px;
+        background-color: #e1dbdb;
+        position: absolute;
+        box-sizing: border-box;
+        border: 5px dashed #f0e6e6;
+        border-radius: 2px;
+        /* background-image: url(img/snake_body.png); */
+        /* background-size: 100% 100%; */
+    }  
+    .tcs_egg{
+        display: block;
+        width: 20px;
+        height: 20px;
+        position: absolute;
+        /* background-color: aqua; */
+        /* border-radius: 5px; */
+        background-image: url(img/food.png);
+        background-size: 100% 100%;
+    } 
+
+    </style>
+</head>
+
+<body>
+    <!--整体容器-->
+    <div class="tcs_container">
+        <!---计分板-->
+        <div class="scoreboard-wrap">
+            <!--得分-->
+            <div class="score">
+                <i class="s-icon"></i>
+                <span class="score-text">0</span>
+            </div>
+            <!--游戏时长-->
+            <div class="duration">
+                <i class="t-icon"></i>
+                <span class="min">00</span>
+                <span>:</span>
+                <span class="sec">00</span>
+
+            </div>
+        </div>
+        <!--活动区域-->
+        <div class="tcs-wrap">
+            <!--蛇头-->
+            <div class="tcs-head right" style="left: 80px;top:40px;"></div>
+            <!--蛇身-->
+            <div class="tcs-body" style="left: 60px;top: 40px;"></div>
+            <div class="tcs-body" style="left: 60px;top: 40px;"></div>
+            <div class="tcs-body" style="left: 60px;top: 40px;"></div>
+            <div class="tcs-body" style="left: 60px;top: 40px;"></div>
+            <div class="tcs-body" style="left: 60px;top: 40px;"></div>
+        </div>
+    </div>
+
+    <script>
+        var tcs_arr=[
+            {left:0,top:0},
+            {left:0,top:0},
+            {left:0,top:0},
+            {left:0,top:0},
+            {left:0,top:0},
+            {left:0,top:0}
+        ];
+        var tcs_doms=document.querySelectorAll(".tcs-wrap div");
+        var tcs_head_dom=document.querySelector(".tcs-head");
+        // console.log(tcs_reverse,tcs_arr);
+        var tcs_wrap_dom=document.querySelector(".tcs-wrap");
+        var score_dom=document.querySelector(".score-text");
+        var min_dom=document.querySelector(".min");
+        var sec_dom=document.querySelector(".sec");
+        var tcs_head={
+            left:0,
+            top:0
+        };
+        var tcs_turn=39;
+        var tcs_control={
+            37:{
+                left:-20,
+                top:0,
+                class:"left"
+            },
+            38:{
+                left:0,
+                top:-20,
+                 class:"top"
+            },
+            39:{
+                left:20,
+                top:0,
+                 class:"right"
+            },
+            40:{
+                left:0,
+                top:20,
+                 class:"bottom"
+            }
+            
+        }
+
+
+        function move(){
+            eggDetection(tcs_head)
+
+            tcs_head.left+=tcs_control[tcs_turn].left;
+            tcs_head.top+=tcs_control[tcs_turn].top;
+            
+            tcs_head_dom.classList.remove("left","right","top","bottom");
+            tcs_head_dom.classList.add(tcs_control[tcs_turn].class)
+
+            tcs_arr[tcs_arr.length-1]=tcs_head;
+            var tcs_reverse=tcs_arr.slice().reverse();
+            // console.log(tcs_reverse);
+            collisionDetection(tcs_reverse)
+            
+            for(var i=0;i<tcs_doms.length;i++){
+                tcs_doms[i].style.left=tcs_reverse[i].left+"px";
+                tcs_doms[i].style.top=tcs_reverse[i].top+"px";
+
+            }
+            for(var i=0;i<tcs_arr.length-1;i++){
+                tcs_arr[i].left=tcs_arr[i+1].left;
+                tcs_arr[i].top=tcs_arr[i+1].top;
+            }
+
+
+        }
+        var t=setInterval(move,100);
+        //游戏终止
+        function collisionDetection(arr){
+            var tcs_head=arr[0];
+            var tcs_bodys=arr.slice(1);
+            for(var i=0;i<tcs_bodys.length;i++){
+                if(tcs_head.left===tcs_bodys[i].left&&tcs_head.top===tcs_bodys[i].top){
+                    alert("游戏失败！");
+                    gameOver();
+                    
+
+                }
+            }
+            if(tcs_head.left<0||tcs_head.left>800||tcs_head.top<0||tcs_head.top>600){
+                alert("游戏失败！");
+                gameOver();
+            }
+        }
+        
+
+
+
+        document.onkeydown=function(e){
+            if(tcs_turn===37&&e.keyCode===39){
+                return
+            }
+            if(tcs_turn===38&&e.keyCode===40){
+                return
+            }
+            if(tcs_turn===39&&e.keyCode===37){
+                return
+            }
+            if(tcs_turn===40&&e.keyCode===38){
+                return
+            }
+            if(e.keyCode>=37 &&e.keyCode<=40){
+                tcs_turn=e.keyCode;
+            }
+            
+        }
+       //蛇food
+        var egg={
+            left:0,
+            top:0,
+            class:"tcs_egg",
+            dom:document.createElement("span")
+        }
+        function createEgg(){
+            egg.left=parseInt(Math.random()*40)*20;
+            egg.top=parseInt(Math.random()*30)*20;
+            egg.dom.style.left=egg.left+"px";
+            egg.dom.style.top=egg.top+"px";
+            egg.dom.classList.add(egg.class);
+            tcs_wrap_dom.appendChild(egg.dom);
+        }
+        createEgg()
+        //end
+
+        //吃food
+        function eggDetection(head){
+            if(head.left===egg.left&&head.top===egg.top){
+                eatEgg();
+                recordScore();
+            }
+        }
+        function eatEgg(){
+            createEgg();
+            creatBody();
+        }
+        //end
+        //长身体
+        function creatBody(){
+            var body=document.createElement("div");
+            body.classList.add("tcs-body");
+            body.style.display="none";
+            setTimeout(function(){
+
+                body.style.display="block";
+            },300)
+            tcs_wrap_dom.appendChild(body);
+            tcs_doms=document.querySelectorAll(".tcs-wrap div");
+            tcs_arr.unshift({
+                left:0,
+                top:0
+            })
+        }
+        //end
+        //得分
+        var score=0;
+        function recordScore(){
+            score++;
+            score_dom.innerHTML=score;
+         }
+         //end
+         //计算器
+          var s=0;
+        function timeMeter(){
+            s++;
+            var min=parseInt(s/60);
+            if(min<10){
+                min="0"+min;
+            }
+            var sec=s%60;
+            if(sec<10){
+                sec="0"+sec;
+            }
+
+            min_dom.innerHTML=min;
+            sec_dom.innerHTML=sec;
+          }
+        var tm=setInterval(timeMeter,1000)
+        //end
+        function gameOver(){
+            clearInterval(t);
+            clearInterval(tm);
+        }
+
+    </script>
+</body>
+</html>
